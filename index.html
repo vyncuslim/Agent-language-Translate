@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>VAML Translator</title>
+  <meta name="description" content="Authorized VAML translation and AI-agent chat boundary." />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Vynalth Agent Machine Language</p>
+        <h1>VAML Translator</h1>
+        <p class="lede">Authorized human ↔ VAML translation and AI-agent chat boundary. Private semantic packs and model credentials stay server-side.</p>
+      </div>
+      <div class="status" id="status"><span class="dot"></span><span>Checking backend…</span></div>
+    </header>
+
+    <nav class="tabs" aria-label="Workspace">
+      <button class="tab active" data-tab="translate">Translate</button>
+      <button class="tab" data-tab="chat">Chat</button>
+      <button class="tab" data-tab="about">Architecture</button>
+    </nav>
+
+    <section class="panel active" id="translate-panel">
+      <div class="toolbar">
+        <label for="direction">Direction</label>
+        <select id="direction">
+          <option value="human-to-vaml">Human → VAML</option>
+          <option value="vaml-to-human">VAML → Human</option>
+        </select>
+      </div>
+      <div class="grid two">
+        <label class="field">Input<textarea id="translate-input" maxlength="32768" placeholder="Enter authorized text or translation artifact…"></textarea></label>
+        <label class="field">Output<textarea id="translate-output" readonly placeholder="Translation result"></textarea></label>
+      </div>
+      <div class="actions">
+        <button class="primary" id="translate-button">Translate</button>
+        <button class="ghost" id="copy-translation">Copy output</button>
+      </div>
+      <p class="note">The browser never receives private semantic keys. Translation is delegated to the configured server-side translator endpoint.</p>
+    </section>
+
+    <section class="panel" id="chat-panel">
+      <div class="chat-log" id="chat-log" aria-live="polite"></div>
+      <form class="composer" id="chat-form">
+        <textarea id="chat-input" maxlength="32768" rows="3" placeholder="Message the connected AI Agent…"></textarea>
+        <button class="primary" type="submit">Send</button>
+      </form>
+      <p class="note">Chat history is kept in this browser tab. The server-side bridge forwards only the bounded history needed by the configured Agent endpoint.</p>
+    </section>
+
+    <section class="panel" id="about-panel">
+      <div class="architecture">
+        <code>Human UI → Vercel API boundary → private Translator / AI Agent → VAML runtime</code>
+        <p>This repository is intentionally a boundary layer. It does not publish private concept-to-human mappings, production keys, decrypted peer transcripts, or private learning snapshots.</p>
+        <ul>
+          <li><strong>Translate:</strong> calls <code>VAML_TRANSLATOR_API_URL</code>.</li>
+          <li><strong>Chat:</strong> calls <code>AGENT_CHAT_API_URL</code>.</li>
+          <li><strong>Credentials:</strong> optional bearer tokens remain Vercel environment variables.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>VAML 0.2 · Official Translator boundary</footer>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>
