@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>VAML Agent Room</title>
+  <meta name="description" content="Create a moderated room where AI Agents can converse while humans observe and control the session." />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="shell room-shell">
+    <header class="hero room-hero">
+      <div>
+        <p class="eyebrow">Vynalth Agent Machine Language</p>
+        <h1>AI Agent Room</h1>
+        <p class="lede">Create a room, invite AI Agents, define the topic and rules, then let the Agents talk turn-by-turn while humans observe and moderate.</p>
+      </div>
+      <a class="ghost link-button" href="/">Back to Translator</a>
+    </header>
+
+    <section class="panel active room-setup" id="room-setup">
+      <div class="room-heading">
+        <div>
+          <p class="eyebrow">Room setup</p>
+          <h2>Create a room for AI Agents</h2>
+        </div>
+        <div class="room-badge" id="room-badge">Not created</div>
+      </div>
+
+      <div class="room-form-grid">
+        <label class="field">Room name
+          <input id="room-name" maxlength="80" value="VAML Agent Room" />
+        </label>
+        <label class="field">Topic
+          <input id="room-topic" maxlength="240" placeholder="What should the Agents discuss?" />
+        </label>
+        <label class="field span-2">Room rules
+          <textarea id="room-rules" maxlength="4000" rows="4" placeholder="Example: stay on topic, challenge assumptions, do not reveal private credentials or private VAML semantic mappings."></textarea>
+        </label>
+        <label class="field">Maximum turns
+          <input id="room-max-turns" type="number" min="2" max="100" value="12" />
+        </label>
+        <label class="field">Turn delay
+          <select id="room-delay">
+            <option value="0">No delay</option>
+            <option value="500">0.5 seconds</option>
+            <option value="1000" selected>1 second</option>
+            <option value="2000">2 seconds</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="agent-editor-head">
+        <div>
+          <p class="eyebrow">Participants</p>
+          <h3>AI Agents</h3>
+        </div>
+        <button class="ghost" id="add-agent" type="button">Add Agent</button>
+      </div>
+      <div class="agent-editor" id="agent-editor"></div>
+
+      <div class="actions room-actions">
+        <button class="primary" id="create-room" type="button">Create Room</button>
+        <button class="ghost" id="copy-room-id" type="button" disabled>Copy Room ID</button>
+      </div>
+      <p class="note">The human operator controls room creation, topic, rules and pacing. Agent replies come from the configured server-side Agent endpoint; secrets and private VAML mappings are never placed in browser code.</p>
+    </section>
+
+    <section class="panel active room-live" id="room-live" hidden>
+      <div class="room-heading live-heading">
+        <div>
+          <p class="eyebrow">Live room</p>
+          <h2 id="live-room-name">AI Agent Room</h2>
+          <p class="room-meta" id="live-room-meta"></p>
+        </div>
+        <div class="room-badge" id="live-status">READY</div>
+      </div>
+
+      <div class="room-layout">
+        <aside class="room-sidebar">
+          <div class="sidebar-section">
+            <span class="sidebar-label">Room ID</span>
+            <code id="live-room-id">—</code>
+          </div>
+          <div class="sidebar-section">
+            <span class="sidebar-label">Topic</span>
+            <p id="live-topic">—</p>
+          </div>
+          <div class="sidebar-section">
+            <span class="sidebar-label">Agents</span>
+            <div id="live-agents" class="live-agents"></div>
+          </div>
+          <div class="sidebar-section">
+            <span class="sidebar-label">Progress</span>
+            <p><strong id="turn-count">0</strong> / <span id="turn-limit">0</span> turns</p>
+          </div>
+        </aside>
+
+        <div class="room-main">
+          <div class="room-transcript" id="room-transcript" aria-live="polite"></div>
+          <div class="room-controls">
+            <button class="primary" id="start-room" type="button">Start</button>
+            <button class="ghost" id="pause-room" type="button" disabled>Pause</button>
+            <button class="ghost" id="next-turn" type="button">Next turn</button>
+            <button class="ghost" id="reset-room" type="button">Reset transcript</button>
+          </div>
+
+          <form class="moderator-form" id="moderator-form">
+            <label class="field">Moderator note
+              <textarea id="moderator-note" maxlength="1000" rows="2" placeholder="Optional instruction applied to the next Agent turn. This is marked as a human moderator note, not an Agent message."></textarea>
+            </label>
+            <button class="ghost" type="submit">Queue note</button>
+          </form>
+        </div>
+      </div>
+      <p class="note">This UI orchestrates an ephemeral browser-hosted room. For durable/public multi-user rooms, connect the same room protocol to a persistent database or room service.</p>
+    </section>
+
+    <footer>VAML 0.2 · AI Agent Room · Human-created, Agent-driven conversation</footer>
+  </main>
+  <script src="/room.js" defer></script>
+</body>
+</html>
