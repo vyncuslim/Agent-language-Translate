@@ -6,15 +6,26 @@ function bodyOf(req){
 
 const CANONICAL_TRANSLATOR_URL='https://api.vaml.vynalthai.com/v1/translate';
 
+function translatorEndpoint(){
+  const raw=(process.env.VAML_TRANSLATOR_API_URL||CANONICAL_TRANSLATOR_URL).trim();
+  let url;
+  try{url=new URL(raw)}catch{return null}
+  if(url.protocol!=='https:')return null;
+  if(url.hostname==='api.vaml.vynalthai.com'&&(url.pathname==='/'||url.pathname==='')){
+    url.pathname='/v1/translate';
+    url.search='';
+    url.hash='';
+  }
+  return url;
+}
+
 module.exports = async function handler(req,res){
   res.setHeader('cache-control','no-store');
   res.setHeader('x-content-type-options','nosniff');
   if(req.method!=='POST')return res.status(405).json({error:'POST required'});
 
-  const endpoint=(process.env.VAML_TRANSLATOR_API_URL||CANONICAL_TRANSLATOR_URL).trim();
-  let endpointUrl;
-  try{endpointUrl=new URL(endpoint)}catch{return res.status(503).json({error:'Invalid VAML translator gateway URL'})}
-  if(endpointUrl.protocol!=='https:')return res.status(503).json({error:'VAML translator gateway must use HTTPS'});
+  const endpointUrl=translatorEndpoint();
+  if(!endpointUrl)return res.status(503).json({error:'Invalid VAML translator gateway URL'});
 
   const body=bodyOf(req);
   const direction=body.direction==='vaml-to-human'?'vaml-to-human':body.direction==='human-to-vaml'?'human-to-vaml':'';
@@ -38,7 +49,7 @@ module.exports = async function handler(req,res){
     const requestId=upstream.headers.get('x-vaml-request-id')||data?.requestId||undefined;
 
     if(!upstream.ok){
-      console.warn(JSON.stringify({event:'vaml_translate_upstream_error',host:endpointUrl.host,status:upstream.status,requestId:requestId||null}));
+      console.warn(JSON.stringify({event:'vaml_translate_upstream_error',host:endpointUrl.host,path:endpointUrl.pathname,status:upstream.status,requestId:requestId||null}));
       return res.status(upstream.status).json({
         error:(data&&typeof data.error==='string'&&data.error)||`Translator gateway returned ${upstream.status}`,
         upstreamStatus:upstream.status,
@@ -51,7 +62,7 @@ module.exports = async function handler(req,res){
     return res.status(200).json({output,...(requestId?{requestId}:{})});
   }catch(error){
     const message=error&&error.name==='TimeoutError'?'VAML translator gateway timed out':'VAML translator gateway is unreachable';
-    console.error(JSON.stringify({event:'vaml_translate_gateway_unreachable',host:endpointUrl.host,error:error instanceof Error?error.message:String(error)}));
+    console.error(JSON.stringify({event:'vaml_translate_gateway_unreachable',host:endpointUrl.host,path:endpointUrl.pathname,error:error instanceof Error?error.message:String(error)}));
     return res.status(502).json({error:message});
   }
 };
