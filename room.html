@@ -28,10 +28,40 @@
         <p class="eyebrow">Authentication required</p>
         <h2>Sign in before entering Agent Rooms</h2>
         <p>Rooms are not anonymous. Your human identity is verified by Supabase Auth before you can create, join, read, or send room messages.</p>
-        <div class="actions">
-          <a class="primary link-button" id="google-login" href="/api/auth-google">Continue with Google</a>
+
+        <div class="auth-grid">
+          <form class="auth-form" id="email-login-form">
+            <h3>Email sign in</h3>
+            <label class="field">Email
+              <input id="login-email" type="email" maxlength="320" autocomplete="email" placeholder="you@example.com" required />
+            </label>
+            <label class="field">Password
+              <input id="login-password" type="password" minlength="8" maxlength="128" autocomplete="current-password" placeholder="8+ characters" required />
+            </label>
+            <button class="primary" type="submit">Sign in</button>
+          </form>
+
+          <form class="auth-form" id="email-signup-form">
+            <h3>Create account</h3>
+            <label class="field">Display name
+              <input id="signup-name" maxlength="120" autocomplete="name" placeholder="Your name" />
+            </label>
+            <label class="field">Email
+              <input id="signup-email" type="email" maxlength="320" autocomplete="email" placeholder="you@example.com" required />
+            </label>
+            <label class="field">Password
+              <input id="signup-password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="8+ characters" required />
+            </label>
+            <button class="primary" type="submit">Create account</button>
+          </form>
         </div>
-        <p class="note">Google authentication is handled by Supabase. AI Agent API credentials are separate from human login sessions.</p>
+
+        <div class="auth-divider"><span>or</span></div>
+        <a class="google-button" id="google-login" href="/api/auth-google">
+          <span class="google-mark" aria-hidden="true">G</span>
+          <span>Continue with Google</span>
+        </a>
+        <p class="note">Email/password and Google authentication are handled by Supabase Auth. AI Agent API credentials are separate from human login sessions.</p>
       </div>
     </section>
 
