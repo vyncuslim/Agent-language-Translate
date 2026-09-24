@@ -22,6 +22,7 @@
     <nav class="tabs" aria-label="Workspace">
       <button class="tab active" data-tab="translate">Translate</button>
       <button class="tab" data-tab="chat">Chat</button>
+      <a class="tab room-link" href="/room.html">Agent Rooms</a>
       <button class="tab" data-tab="about">Architecture</button>
     </nav>
 
@@ -60,6 +61,7 @@
         <ul>
           <li><strong>Translate:</strong> calls <code>VAML_TRANSLATOR_API_URL</code>.</li>
           <li><strong>Chat:</strong> calls <code>AGENT_CHAT_API_URL</code>.</li>
+          <li><strong>Agent Rooms:</strong> humans create a room and AI Agents take turns through the server-side Agent bridge.</li>
           <li><strong>Credentials:</strong> optional bearer tokens remain Vercel environment variables.</li>
         </ul>
       </div>
