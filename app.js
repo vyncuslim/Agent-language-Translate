@@ -15,8 +15,22 @@ async function jsonFetch(url,options={}){
   const response=await fetch(url,{...options,headers:{'content-type':'application/json',...(options.headers||{})}});
   let data;
   try{data=await response.json()}catch{data={error:`HTTP ${response.status}`}}
-  if(!response.ok)throw new Error(data.error||`HTTP ${response.status}`);
+  if(!response.ok){
+    const error=new Error(data.error||`HTTP ${response.status}`);
+    error.status=response.status;
+    error.requestId=data.requestId;
+    throw error;
+  }
   return data;
+}
+
+function translatorStatusText(data){
+  if(data.translatorState==='ready')return 'Translator ready';
+  if(data.translatorState==='runtime-missing')return 'Translator gateway ready · VAML runtime not configured';
+  if(data.translatorState==='token-missing')return 'Translator gateway ready · token not configured';
+  if(data.translatorState==='gateway-auth-missing')return 'Translator gateway auth not configured';
+  if(data.translatorState==='gateway-ready')return 'Translator gateway ready · runtime status unavailable';
+  return 'Translator unavailable';
 }
 
 function chatStatusText(data){
@@ -32,10 +46,15 @@ async function refreshStatus(){
   const node=$('status');
   try{
     const data=await jsonFetch('/api/status');
-    const translatorText=data.translatorConfigured?'Translator ready':'Translator not configured';
+    const translatorText=translatorStatusText(data);
     const chatText=chatStatusText(data);
     node.classList.toggle('ok',Boolean(data.translatorConfigured&&data.chatConfigured));
-    node.classList.toggle('bad',Boolean(!data.translatorConfigured||data.chatState==='gateway-unavailable'||data.chatState==='gateway-auth-missing'));
+    node.classList.toggle('bad',Boolean(
+      data.translatorState==='gateway-unavailable'||
+      data.translatorState==='gateway-auth-missing'||
+      data.chatState==='gateway-unavailable'||
+      data.chatState==='gateway-auth-missing'
+    ));
     node.querySelector('span:last-child').textContent=`${translatorText} · ${chatText}`;
   }catch{
     node.classList.add('bad');
@@ -52,8 +71,9 @@ $('translate-button').addEventListener('click',async()=>{
   try{
     const data=await jsonFetch('/api/translate',{method:'POST',body:JSON.stringify({direction:$('direction').value,input})});
     output.value=data.output||'';
-  }catch(error){output.value=`Error: ${error.message}`}
-  finally{button.disabled=false}
+  }catch(error){
+    output.value=`Error: ${error.message}${error.requestId?`\nRequest ID: ${error.requestId}`:''}`;
+  }finally{button.disabled=false}
 });
 
 $('copy-translation').addEventListener('click',async()=>{
@@ -82,7 +102,7 @@ $('chat-form').addEventListener('submit',async(event)=>{
     bubble('agent',reply);
     history.push({role:'user',content:message},{role:'assistant',content:reply});
     if(history.length>80)history.splice(0,history.length-80);
-  }catch(error){bubble('error',`Chat unavailable: ${error.message}`)}
+  }catch(error){bubble('error',`Chat unavailable: ${error.message}${error.requestId?` · ${error.requestId}`:''}`)}
 });
 
 refreshStatus();
