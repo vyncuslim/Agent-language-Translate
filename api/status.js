@@ -1,11 +1,24 @@
+function normalizeEndpoint(raw,fallback,canonicalPath){
+  try{
+    const url=new URL((raw||fallback).trim());
+    if(url.protocol!=='https:')return fallback;
+    if(url.hostname==='api.vaml.vynalthai.com'&&(url.pathname==='/'||url.pathname==='')){
+      url.pathname=canonicalPath;
+      url.search='';
+      url.hash='';
+    }
+    return url.toString();
+  }catch{return fallback}
+}
+
 module.exports = async function handler(req,res){
   res.setHeader('cache-control','no-store');
   const supabaseAuthConfigured=Boolean(process.env.SUPABASE_URL&&process.env.SUPABASE_PUBLISHABLE_KEY);
   const roomDatabaseConfigured=Boolean(supabaseAuthConfigured&&process.env.SUPABASE_SECRET_KEY);
 
-  const translatorGatewayUrl=process.env.VAML_TRANSLATOR_API_URL||'https://api.vaml.vynalthai.com/v1/translate';
+  const translatorGatewayUrl=normalizeEndpoint(process.env.VAML_TRANSLATOR_API_URL,'https://api.vaml.vynalthai.com/v1/translate','/v1/translate');
   const translatorTokenConfigured=Boolean(process.env.VAML_TRANSLATOR_API_TOKEN);
-  const chatGatewayUrl=process.env.AGENT_CHAT_API_URL||'https://api.vaml.vynalthai.com/v1/chat';
+  const chatGatewayUrl=normalizeEndpoint(process.env.AGENT_CHAT_API_URL,'https://api.vaml.vynalthai.com/v1/chat','/v1/chat');
   const chatTokenConfigured=Boolean(process.env.AGENT_CHAT_API_TOKEN||process.env.VAML_TRANSLATOR_API_TOKEN);
 
   let translatorRuntimeConfigured=null;
@@ -43,7 +56,7 @@ module.exports = async function handler(req,res){
 
   res.status(200).json({
     service:'agent-language-translate',
-    version:'0.4.0',
+    version:'0.4.1',
     translatorConfigured,
     translatorGatewayConfigured,
     translatorTokenConfigured,
