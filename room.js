@@ -16,6 +16,17 @@ function toast(message, kind = '') {
   toast.timer = setTimeout(() => { node.hidden = true; }, 3200);
 }
 
+function storeSession(value) {
+  if (!value?.access_token || !value?.refresh_token) return false;
+  session = {
+    access_token: value.access_token,
+    refresh_token: value.refresh_token,
+    expires_at: Number(value.expires_at) || Math.floor(Date.now() / 1000) + (Number(value.expires_in) || 3600)
+  };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  return true;
+}
+
 function parseOAuthCallback() {
   if (!location.hash || location.hash.length < 2) return;
   const params = new URLSearchParams(location.hash.slice(1));
@@ -24,9 +35,12 @@ function parseOAuthCallback() {
   const accessToken = params.get('access_token');
   const refreshToken = params.get('refresh_token');
   if (accessToken && refreshToken) {
-    const expiresAt = Number(params.get('expires_at')) || Math.floor(Date.now() / 1000) + (Number(params.get('expires_in')) || 3600);
-    session = { access_token: accessToken, refresh_token: refreshToken, expires_at: expiresAt };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    storeSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_at: Number(params.get('expires_at')) || 0,
+      expires_in: Number(params.get('expires_in')) || 3600
+    });
   }
   history.replaceState({}, document.title, `${location.pathname}${location.search}`);
 }
@@ -59,12 +73,12 @@ async function refreshSession() {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data.access_token) throw new Error(data.error || 'Session refresh failed');
-  session = {
+  storeSession({
     access_token: data.access_token,
     refresh_token: data.refresh_token || existing.refresh_token,
-    expires_at: Number(data.expires_at) || Math.floor(Date.now() / 1000) + (Number(data.expires_in) || 3600)
-  };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    expires_at: Number(data.expires_at) || 0,
+    expires_in: Number(data.expires_in) || 3600
+  });
   return session;
 }
 
@@ -94,6 +108,63 @@ async function authFetch(url, options = {}, retry = true) {
   const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
   if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
   return data;
+}
+
+async function emailAuth(action, { email, password, name = '' }) {
+  const response = await fetch('/api/auth-email', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ action, email, password, name })
+  });
+  const data = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+  return data;
+}
+
+async function completeHumanSignIn(authData) {
+  if (!storeSession(authData.session)) throw new Error('Supabase did not return a usable session');
+  await loadAccount();
+  await loadRooms();
+  toast('Signed in.');
+}
+
+async function signInWithEmail(event) {
+  event.preventDefault();
+  const email = $('login-email').value.trim();
+  const password = $('login-password').value;
+  const submit = event.submitter;
+  if (submit) submit.disabled = true;
+  try {
+    const data = await emailAuth('sign-in', { email, password });
+    await completeHumanSignIn(data);
+    $('login-password').value = '';
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    if (submit) submit.disabled = false;
+  }
+}
+
+async function signUpWithEmail(event) {
+  event.preventDefault();
+  const name = $('signup-name').value.trim();
+  const email = $('signup-email').value.trim();
+  const password = $('signup-password').value;
+  const submit = event.submitter;
+  if (submit) submit.disabled = true;
+  try {
+    const data = await emailAuth('sign-up', { name, email, password });
+    $('signup-password').value = '';
+    if (data.session) {
+      await completeHumanSignIn(data);
+    } else {
+      toast(data.message || 'Account created. Check your email to confirm it.');
+    }
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    if (submit) submit.disabled = false;
+  }
 }
 
 function showSignedOut() {
@@ -325,6 +396,8 @@ async function signOut() {
   history.replaceState({}, document.title, location.pathname);
 }
 
+$('email-login-form').addEventListener('submit', signInWithEmail);
+$('email-signup-form').addEventListener('submit', signUpWithEmail);
 $('create-room').addEventListener('click', () => createRoom().catch((e) => toast(e.message, 'error')));
 $('join-room').addEventListener('click', () => joinRoom().catch((e) => toast(e.message, 'error')));
 $('refresh-rooms').addEventListener('click', () => loadRooms().catch((e) => toast(e.message, 'error')));
