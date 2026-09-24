@@ -3,6 +3,7 @@ const $=(id)=>document.getElementById(id);
 
 for(const button of document.querySelectorAll('.tab')){
   button.addEventListener('click',()=>{
+    if(!button.dataset.tab)return;
     document.querySelectorAll('.tab').forEach((x)=>x.classList.remove('active'));
     document.querySelectorAll('.panel').forEach((x)=>x.classList.remove('active'));
     button.classList.add('active');
@@ -18,14 +19,24 @@ async function jsonFetch(url,options={}){
   return data;
 }
 
+function chatStatusText(data){
+  if(data.chatState==='ready')return 'Chat ready';
+  if(data.chatState==='runtime-missing')return 'Chat gateway ready · AI runtime not configured';
+  if(data.chatState==='token-missing')return 'Chat gateway ready · token not configured';
+  if(data.chatState==='gateway-auth-missing')return 'Chat gateway auth not configured';
+  if(data.chatState==='gateway-ready')return 'Chat gateway ready · runtime status unavailable';
+  return 'Chat unavailable';
+}
+
 async function refreshStatus(){
   const node=$('status');
   try{
     const data=await jsonFetch('/api/status');
-    node.classList.toggle('ok',data.chatConfigured&&data.translatorConfigured);
-    node.classList.toggle('bad',!data.chatConfigured&&!data.translatorConfigured);
-    const parts=[data.translatorConfigured?'Translator ready':'Translator not configured',data.chatConfigured?'Chat ready':'Chat not configured'];
-    node.querySelector('span:last-child').textContent=parts.join(' · ');
+    const translatorText=data.translatorConfigured?'Translator ready':'Translator not configured';
+    const chatText=chatStatusText(data);
+    node.classList.toggle('ok',Boolean(data.translatorConfigured&&data.chatConfigured));
+    node.classList.toggle('bad',Boolean(!data.translatorConfigured||data.chatState==='gateway-unavailable'||data.chatState==='gateway-auth-missing'));
+    node.querySelector('span:last-child').textContent=`${translatorText} · ${chatText}`;
   }catch{
     node.classList.add('bad');
     node.querySelector('span:last-child').textContent='Backend unavailable';
