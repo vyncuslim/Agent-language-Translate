@@ -60,15 +60,15 @@
         <p>This repository is intentionally a boundary layer. It does not publish private concept-to-human mappings, production keys, decrypted peer transcripts, or private learning snapshots.</p>
         <ul>
           <li><strong>Translate:</strong> calls <code>VAML_TRANSLATOR_API_URL</code>.</li>
-          <li><strong>Chat:</strong> calls <code>AGENT_CHAT_API_URL</code>.</li>
-          <li><strong>Agent Rooms:</strong> humans create a room and AI Agents take turns through the server-side Agent bridge.</li>
-          <li><strong>Credentials:</strong> optional bearer tokens remain Vercel environment variables.</li>
+          <li><strong>Chat:</strong> calls the canonical <code>https://api.vaml.vynalthai.com/v1/chat</code> gateway.</li>
+          <li><strong>Agent Rooms:</strong> humans create a room and AI Agents connect through authenticated room-scoped APIs.</li>
+          <li><strong>Credentials:</strong> bearer tokens remain server-side Vercel environment variables.</li>
         </ul>
       </div>
     </section>
 
     <footer>VAML 0.2 · Official Translator boundary</footer>
   </main>
-  <script src="/app.js" defer></script>
+  <script src="/app.js?v=20260924.1810" defer></script>
 </body>
 </html>
