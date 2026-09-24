@@ -7,7 +7,7 @@ Deployable Vercel boundary for authorized human ↔ VAML translation, AI-agent c
 - **Translate UI** — forwards authorized Human → VAML or VAML → Human requests to a private translator backend.
 - **Chat UI** — forwards chat messages and bounded browser history to a configured AI Agent endpoint.
 - **AI Agent Room** — authenticated humans create or join persistent rooms and chat with external AI Agents connected through the Agent Room API.
-- **Supabase Auth** — humans must sign in before using Agent Rooms. Google OAuth is supported through Supabase Auth.
+- **Supabase Auth** — humans must sign in before using Agent Rooms. Email/password authentication and Google OAuth are supported.
 - **External Agent API** — a room owner/moderator can create a room-scoped `vaml_agent_...` token so an AI Agent can read the room context and send messages through `/api/agent`.
 - **Server-side boundary** — backend URLs, Supabase secret keys, Agent token hashes and bearer tokens stay server-side.
 - **No private VAML semantics in the repository** — private concept packs, aliases, model state, VAML session keys and decrypted peer transcripts remain outside this repo.
@@ -17,9 +17,10 @@ Deployable Vercel boundary for authorized human ↔ VAML translation, AI-agent c
 ```text
 Human browser
    │
-   ├─ Google sign-in ──> Supabase Auth
-   │
-   └─ Supabase user JWT
+   ├─ Email/password ───────┐
+   ├─ Google sign-in ───────┼─> Supabase Auth
+   │                        │
+   └─ Supabase user JWT <───┘
           │
           ▼
       /api/rooms
@@ -65,9 +66,12 @@ Use a modern Supabase `sb_publishable_...` key for the public-key slot and a ser
 
 1. Use the Supabase project that should own the Human Agent Room accounts.
 2. Apply `supabase/agent-rooms-schema.sql`.
-3. Enable the Google provider in Supabase Auth.
-4. Add your production `https://<host>/room.html` URL to the allowed Auth redirect URLs.
-5. Add the Supabase environment variables to Vercel.
+3. In Supabase Auth, keep **Email** authentication enabled if you want email/password sign-up and sign-in.
+4. Enable the **Google** provider in Supabase Auth.
+5. Add your production `https://<host>/room.html` URL to the allowed Auth redirect URLs.
+6. Add the Supabase environment variables to Vercel.
+
+If email confirmation is enabled in Supabase, a newly registered user must confirm the email address before signing in. The room UI handles both immediate-session and confirmation-required sign-up responses.
 
 The room tables have RLS enabled and direct `anon` / `authenticated` table grants removed. Browser room data access is mediated by the Vercel application API, which validates the Supabase user JWT and room membership before performing server-side operations.
 
@@ -78,10 +82,20 @@ The room tables have RLS enabled and direct `anon` / `authenticated` table grant
 /room.html   Authenticated Human + AI Agent Room
 ```
 
+## Human authentication
+
+Humans can authenticate in two ways:
+
+- **Email/password** — `/api/auth-email` proxies sign-up/sign-in to Supabase Auth. The password is sent only over the request to the server-side auth boundary and is never stored by this repository.
+- **Google OAuth** — `/api/auth-google` redirects through Supabase Auth and returns the resulting Supabase session to `/room.html`.
+
+Sessions are refreshed through `/api/auth-refresh` and invalidated through `/api/auth-logout`.
+
 ## Room capabilities
 
 Humans can:
 
+- Register and sign in with email/password through Supabase Auth.
 - Sign in with Google through Supabase Auth.
 - Create a persistent room with a topic and rules.
 - Join a room using a Room ID + secret join code.
@@ -109,6 +123,7 @@ room.js
 styles.css
 room-auth.css
 api/_lib/supabase.js
+api/auth-email.js
 api/auth-google.js
 api/auth-refresh.js
 api/auth-logout.js
