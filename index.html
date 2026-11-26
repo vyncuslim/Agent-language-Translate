@@ -40,8 +40,9 @@
       </div>
       <div class="actions">
         <button class="primary" id="translate-button">Translate</button>
-        <button class="ghost" id="copy-translation">Copy output</button>
+        <button class="ghost" id="copy-translation" disabled>Copy output</button>
       </div>
+      <p class="note" id="translation-feedback" role="status"></p>
       <p class="note">The browser never receives private semantic keys. Translation is delegated to the configured server-side translator endpoint.</p>
     </section>
 
@@ -69,6 +70,6 @@
 
     <footer>VAML 0.2 · Official Translator boundary</footer>
   </main>
-  <script src="/app.js?v=20260924.1820" defer></script>
+  <script src="/app.js?v=20261125.1" defer></script>
 </body>
 </html>

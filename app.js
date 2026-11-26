@@ -62,23 +62,51 @@ async function refreshStatus(){
   }
 }
 
-$('translate-button').addEventListener('click',async()=>{
-  const input=$('translate-input').value;
-  const output=$('translate-output');
-  const button=$('translate-button');
-  if(!input.trim())return;
-  button.disabled=true; output.value='Translating…';
+const MAX_TRANSLATION_BYTES=32768;
+const translationInput=$('translate-input');
+const translationOutput=$('translate-output');
+const translateButton=$('translate-button');
+const copyButton=$('copy-translation');
+const translationFeedback=$('translation-feedback');
+
+translateButton.addEventListener('click',async()=>{
+  const input=translationInput.value.normalize('NFC');
+  translationFeedback.textContent='';
+  if(!input.trim()||new TextEncoder().encode(input).length>MAX_TRANSLATION_BYTES){
+    translationFeedback.textContent=!input.trim()?'Enter text to translate.':'Input is too long. Use at most 32,768 UTF-8 bytes.';
+    translationInput.focus();
+    return;
+  }
+  translateButton.disabled=true;
+  copyButton.disabled=true;
+  translationOutput.value='Translating…';
   try{
     const data=await jsonFetch('/api/translate',{method:'POST',body:JSON.stringify({direction:$('direction').value,input})});
-    output.value=data.output||'';
+    const result=typeof data?.output==='string'?data.output:'';
+    if(!result.trim())throw new Error('No translation was returned.');
+    translationOutput.value=result;
+    copyButton.disabled=false;
+    translationFeedback.textContent='Translation ready.';
   }catch(error){
-    output.value=`Error: ${error.message}${error.requestId?`\nRequest ID: ${error.requestId}`:''}`;
-  }finally{button.disabled=false}
+    const message=`Error: ${error.message}${error.requestId?`\nRequest ID: ${error.requestId}`:''}`;
+    translationOutput.value=message;
+    translationFeedback.textContent=message;
+  }finally{translateButton.disabled=false}
 });
 
-$('copy-translation').addEventListener('click',async()=>{
-  const value=$('translate-output').value;
-  if(value)await navigator.clipboard.writeText(value);
+copyButton.addEventListener('click',async()=>{
+  if(copyButton.disabled)return;
+  const value=translationOutput.value;
+  try{
+    await navigator.clipboard.writeText(value);
+    if(!copyButton.disabled&&translationOutput.value===value)translationFeedback.textContent='Output copied.';
+  }catch{
+    if(!copyButton.disabled&&translationOutput.value===value){
+      translationOutput.focus();
+      translationOutput.select();
+      translationFeedback.textContent='Clipboard unavailable. Select the output and copy it manually.';
+    }
+  }
 });
 
 function bubble(role,text){
